@@ -1,0 +1,27 @@
+
+# Ignore all prediction results
+**/Prediction_results/
+
+# Ignore all TPR_GAPS, FPR_GAPS, AUC_GAPS,FPR
+**/TPR_GAPS/
+**/FPR_GAPS/
+**/AUC_GAPS/
+**/FPR/
+
+# Ignore all extracted embeddings and dataset folders
+**/Extracted_Embeddings/
+**/DataSet/
+
+# Ignore all __pycache__ directories
+**/__pycache__/
+
+# Ignore all dataframes folders
+**/dataframes/
+
+# Ignore specific parent folders if needed
+**/predictions/
+
+
+
+
+
