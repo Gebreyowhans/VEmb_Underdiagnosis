@@ -21,6 +21,21 @@
 # Ignore specific parent folders if needed
 **/predictions/
 
+**/biomedclip-embedding/
+
+**/Baseline_FPR/
+**/CXR_Foundation/
+**/CXR_FPR/
+
+**/CheXpert/dataframes/
+
+**/CheXpert/df_*.csv
+
+**/MIMIC/df_*_for_metadata_prediction.csv
+
+**/MIMIC/processed_mimic_df.csv
+
+
 
 
 

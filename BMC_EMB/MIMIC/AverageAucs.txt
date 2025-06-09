@@ -1,0 +1,16 @@
+Label, AUC, CI
+Enlarged Cardiomediastinum, 0.673, 0.002
+Cardiomegaly, 0.771, 0.001
+Lung Opacity, 0.726, 0.001
+Lung Lesion, 0.723, 0.002
+Edema, 0.865, 0.001
+Consolidation, 0.781, 0.001
+Pneumonia, 0.683, 0.002
+Atelectasis, 0.756, 0.0
+Pneumothorax, 0.787, 0.002
+Pleural Effusion, 0.863, 0.001
+Pleural Other, 0.799, 0.005
+Fracture, 0.622, 0.004
+Support Devices, 0.858, 0.001
+No Finding, 0.825, 0.001
+AVG,  0.767, 0.001
