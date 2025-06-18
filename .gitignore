@@ -6,7 +6,7 @@
 **/TPR_GAPS/
 **/FPR_GAPS/
 **/AUC_GAPS/
-**/FPR/
+# **/FPR/
 
 # Ignore all extracted embeddings and dataset folders
 **/Extracted_Embeddings/

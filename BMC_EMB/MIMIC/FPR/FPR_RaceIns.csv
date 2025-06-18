@@ -1,0 +1,7 @@
+race,FPR_Medicare,CI_FPR_Medicare,FPR_Other,CI_FPR_Other,FPR_Medicaid,CI_FPR_Medicaid
+White,,,0.4,0.131,,
+Black,0.269,0.005,0.213,0.006,0.252,0.011
+Hisp,0.259,0.005,0.344,0.008,0.3,0.006
+Other,0.256,0.009,0.376,0.003,0.298,0.013
+Asian,0.207,0.003,0.334,0.012,0.362,0.006
+American,0.237,0.005,0.274,0.004,0.261,0.007

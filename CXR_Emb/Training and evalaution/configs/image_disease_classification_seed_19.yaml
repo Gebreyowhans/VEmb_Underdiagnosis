@@ -39,7 +39,7 @@ data: # data.moudle.DataModule
               degrees: 15
           - class_path: torchvision.transforms.Resize
             init_args:
-              size: [256,256]
+              size: [768,256]
           - class_path: torchvision.transforms.CenterCrop
             init_args:
               size: 256
@@ -59,7 +59,7 @@ data: # data.moudle.DataModule
           transforms:
           - class_path: torchvision.transforms.Resize
             init_args:
-              size: [256,256]
+              size: [768,256]
           - class_path: torchvision.transforms.CenterCrop
             init_args:
               size: 256
@@ -79,7 +79,7 @@ data: # data.moudle.DataModule
           transforms:
           - class_path: torchvision.transforms.Resize
             init_args:
-              size: [256,256]
+              size: [768,256]
           - class_path: torchvision.transforms.CenterCrop
             init_args:
               size: 256

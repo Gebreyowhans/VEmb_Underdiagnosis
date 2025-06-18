@@ -1,0 +1,4 @@
+Insurance,FPR_F,CI_FPR_F,FPR_M,CI_FPR_M
+Medicare,0.287,0.007,0.279,0.006
+Other,0.237,0.005,0.243,0.005
+Medicaid,0.328,0.005,0.266,0.005

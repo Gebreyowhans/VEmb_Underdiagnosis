@@ -1,0 +1,2 @@
+,diseases,#Medicare,FPR_Medicare,FNR_Medicare,#Other,FPR_Other,FNR_Other,#Medicaid,FPR_Medicaid,FNR_Medicaid
+0,No Finding,7287,0.154,0.324,6356,0.179,0.192,1132,0.204,0.182

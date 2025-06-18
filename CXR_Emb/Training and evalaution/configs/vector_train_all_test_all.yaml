@@ -44,7 +44,7 @@ data: #data.DataModule
       data_path_mimic: /fs01/home/hhamidi/pytorch_lightning/clean/datasets/mimic-cxr/files
       data_path_chexpert: /fs01/home/hhamidi/clean_image/datasets/cp
 
-  batch_size: 256
+  batch_size: 48
   num_workers: 35
   prediction_on: "val"
 
@@ -53,7 +53,7 @@ model: # models.module.CLS
     class_path: models.vec.models.CustomModel
     init_args:
       embeddings_size: 1376
-      hidden_layer_sizes: [768, 256, 128, 64]
+      hidden_layer_sizes: [768, 256]
       dropout_rate: 0.1
       num_classes: 14
   criterion: #
