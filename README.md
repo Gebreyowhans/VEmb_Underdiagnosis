@@ -35,9 +35,8 @@ After training, the model can be tested  by specifying the path to the saved che
 
 Underdiagnosis analysis for the `CXR_Emb` dataset is available in the `CXR_Emb/Fairness` directory. This directory contains five separate folders, each corresponding to a different dataset forms . For each scenario, we calculate the False Positive Rate (FPR) across different random seeds, compute the average FPR over five runs with 95% confidence intervals, and visualize the results using the `FPR_Visualizations_**.ipynb` notebook. Replace `**` with the appropriate dataset name (e.g., `MIMIC` for the MIMIC dataset).
 
-### Model Configuration : BMC_Emb
-Model Configuration files for the CXR_Emb model are located in the ./configs directory. 
-
+### Model For : BMC_Emb
+ 
 ## Training and testing 
 
 Training and testing for this scenario are located in the `**_Biomedclip.py` scripts under the `BMC_Emb` directory. You will find three folders corresponding to the `CheXpert`, `MIMIC`, and `ALL` datasets. Replace `**` with the appropriate dataset name (e.g., `MIMIC` for the MIMIC dataset).
