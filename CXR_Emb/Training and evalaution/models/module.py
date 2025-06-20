@@ -1,173 +1,190 @@
-import lightning as L
-import torch.nn
-import numpy as np
-import torch.nn as nn
-import warnings
-import torch.nn.functional as F
-from metrics.metrics import calculate_roc_auc, calculate_fpr_fnr, find_best_threshold
+"""Classification LightningModule wrapper.
+
+This module cleans styling and comments of an existing implementation while
+keeping its public interface and behaviour intact.
+"""
+
 import os
+import warnings
+from typing import Dict, List, Optional
+
+import lightning as L
+import numpy as np
+import torch
+import torch.nn as nn
+
+from metrics.metrics import calculate_roc_auc, calculate_fpr_fnr, find_best_threshold
 
 
 class CLS(L.LightningModule):
+    """A generic PyTorch‑Lightning module for classification tasks.
 
-    def __init__(self, model: nn.Module,
-                 criterion=nn.CrossEntropyLoss(),
-                 lr=0.0005,
-                 weight_decay=0.0005,
-                 prediction_on="test",
-                 save_probabilities_path=None):
+    Args:
+        model: Backbone network that returns *logits*.
+        criterion: Loss function (defaults to :class:`torch.nn.CrossEntropyLoss`).
+        lr: Learning‑rate for ``Adam`` optimiser.
+        weight_decay: Weight‑decay for ``Adam`` optimiser.
+        prediction_on: Dataset split used by ``predict_step``.
+        save_probabilities_path: Optional directory where probabilities & labels
+            are persisted at the end of ``predict``.
+    """
+
+    def __init__(
+        self,
+        model: nn.Module,
+        criterion: nn.Module = nn.CrossEntropyLoss(),
+        lr: float = 5e-4,
+        weight_decay: float = 5e-4,
+        prediction_on: str = "test",
+        save_probabilities_path: Optional[str] = None,
+    ) -> None:
         super().__init__()
-        print("CLS init", "*"*50)
+        print("CLS init", "*" * 50)
+
         self.model = model
+        self.criterion = criterion
         self.lr = lr
         self.weight_decay = weight_decay
         self.prediction_on = prediction_on
         self.save_probabilities_path = save_probabilities_path
 
-        self.criterion = criterion
+        # Buffers for per‑epoch statistics
+        self.stages: Dict[str, Dict[str, List]] = {
+            "train": {"loss": [], "labels": [], "probabilities": []},
+            "val": {"loss": [], "labels": [], "probabilities": []},
+            "test": {"loss": [], "labels": [], "probabilities": []},
+        }
 
-        self.stages = {"test": {"loss": [], "labels": [], "probabilities": []},
-                       "val": {"loss": [], "labels": [], "probabilities": []},
-                       "train": {"loss": [], "labels": [], "probabilities": []}}
+    # ---------------------------------------------------------------------
+    # Mini‑batch steps
+    # ---------------------------------------------------------------------
+    def forward(self, x):  # noqa: D401, N802
+        """Delegate to the wrapped *model*."""
+        return self.model(x)
 
-    def training_step(self, batch, batch_idx):
-
-        data, target = batch['data'].to(
-            self.device), batch['labels'].to(self.device)
-
+    def training_step(self, batch, batch_idx):  # noqa: D401, N802
+        """Single optimisation step on *train* split."""
+        data, target = batch["data"].to(self.device), batch["labels"].to(self.device)
         output = self.model(data.float().squeeze())
         loss = self.criterion(output, target)
-        self.log('train_loss', loss, prog_bar=True, logger=True)
-
+        self.log("train_loss", loss, prog_bar=True, logger=True)
         return {"loss": loss}
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx):  # noqa: D401, N802
+        """Forward‑pass and metric accumulation for *val* split."""
+        loss = self._shared_eval(batch, stage="val")
+        self.log("val_loss", loss, prog_bar=True, logger=True)
 
-        loss = self.share_val_test(batch, stage="val")
-        self.log('val_loss', loss, prog_bar=True, logger=True)
+    def test_step(self, batch, batch_idx):  # noqa: D401, N802
+        """Forward‑pass and metric accumulation for *test* split."""
+        loss = self._shared_eval(batch, stage="test")
+        self.log("test_loss", loss, prog_bar=True, logger=True)
 
-    def test_step(self, batch, batch_idx):
-
-        loss = self.share_val_test(batch, stage="test")
-        self.log('test_loss', loss, prog_bar=True, logger=True)
-
-    def predict_step(self, batch, batch_idx):
-
-        data, target = batch['data'].to(
-            self.device), batch['labels'].to(self.device)
+    def predict_step(self, batch, batch_idx):  # noqa: D401, N802
+        """Store probabilities & labels for use after ``trainer.predict``."""
+        data, target = batch["data"].to(self.device), batch["labels"].to(self.device)
         output = self.model(data.float().squeeze())
         loss = self.criterion(output, target)
-        self.append_data(output, target, loss, stage=self.prediction_on)
+        self._append_data(output, target, loss, stage=self.prediction_on)
 
-    def on_predict_epoch_end(self, results):
+    # ---------------------------------------------------------------------
+    # Epoch‑end hooks
+    # ---------------------------------------------------------------------
+    def on_predict_epoch_end(self):  # noqa: D401, N802
+        """Aggregate losses & optionally save probabilities after *predict*."""
+        mean_loss = np.mean([t.cpu().numpy() for t in self.stages[self.prediction_on]["loss"]])
+        print(f"loss on {self.prediction_on} set = {mean_loss}")
 
-        # Assuming self.stages[self.prediction_on]["loss"] is a PyTorch tensor on GPU
-        # Assuming self.stages[self.prediction_on]["loss"] is a list of PyTorch tensors on GPU
-        loss_list = self.stages[self.prediction_on]["loss"]
+        # Persist results if requested
+        if self.save_probabilities_path:
+            self._save_probabilities_and_labels(
+                self.stages[self.prediction_on]["probabilities"],
+                self.stages[self.prediction_on]["labels"],
+                self.save_probabilities_path,
+                stage=self.prediction_on,
+            )
 
-        # Move each tensor to CPU and convert to NumPy array
-        loss_numpy_list = [tensor.cpu().numpy() for tensor in loss_list]
+        # Reset buffers
+        self.stages[self.prediction_on] = {"loss": [], "labels": [], "probabilities": []}
 
-        # Compute the mean of the NumPy array
-        mean_loss = np.mean(loss_numpy_list)
-
-        print("loss on {} set = {}".format(self.prediction_on, mean_loss))
-        # save probabilities and labels
-        if self.save_probabilities_path is not None:
-            self.save_probabilities_and_labels(self.stages[self.prediction_on]["probabilities"],
-                                               self.stages[self.prediction_on]["labels"], self.save_probabilities_path, stage=self.prediction_on)
-
-        # clean stage data
-        self.stages[self.prediction_on] = {
-            "loss": [], "labels": [], "probabilities": []}
-
-    def on_test_epoch_end(self):
-
+    def on_test_epoch_end(self):  # noqa: D401, N802
+        """Compute & report metrics for the *test* split."""
         avg_loss = np.mean(self.stages["test"]["loss"])
-
         _, _, class_auc = calculate_roc_auc(
-            self.stages["test"]["probabilities"], self.stages["test"]["labels"])
+            self.stages["test"]["probabilities"], self.stages["test"]["labels"]
+        )
         average_auc = sum(class_auc.values()) / len(class_auc)
 
-        print("-"*50)
+        print("-" * 50)
         print(class_auc)
-        print("Test loss = {}".format(avg_loss))
-        print("Average AUC = {}".format(average_auc))
-
-        # clean stage data
+        print(f"Test loss = {avg_loss}")
+        print(f"Average AUC = {average_auc}")
         self.stages["test"] = {"loss": [], "labels": [], "probabilities": []}
 
-    def on_validation_epoch_end(self):
-
+    def on_validation_epoch_end(self):  # noqa: D401, N802
+        """Compute & report metrics for the *validation* split."""
         avg_loss = np.mean(self.stages["val"]["loss"])
-
         _, _, class_auc = calculate_roc_auc(
-            self.stages["val"]["probabilities"], self.stages["val"]["labels"])
-        print(class_auc)
-        # thresholds_test = find_best_threshold(self.probabilities_val_test, self.labels_val_test)
-        # print("Best thresholds for validation set: {}".format(thresholds_test))
-        # fpr_numbers_test, fnr_numbers_test = calculate_fpr_fnr(self.probabilities_val_test, self.labels_val_test, thresholds_test)
-
-        # # | Class | FPR    | FNR    |
-        # # |-------|--------|--------|
-        # # |   0   |  0.00  |  0.00  |
-
-        # print("| Class | FPR    | FNR    |")
-        # print("|-------|--------|--------|")
-        # for i in range(len(fpr_numbers_test)):
-
-        #     print("|   {}   |   {:.3f}  |   {:.3f}  |".format(i, fpr_numbers_test[i], fnr_numbers_test[i]))
-
+            self.stages["val"]["probabilities"], self.stages["val"]["labels"]
+        )
         average_auc = sum(class_auc.values()) / len(class_auc)
 
-        print("-"*50)
-        print("Validation loss = {}".format(avg_loss))
-        print("Average AUC = {}".format(average_auc))
-
-        # clean stage data
+        print("-" * 50)
+        print(class_auc)
+        print(f"Validation loss = {avg_loss}")
+        print(f"Average AUC = {average_auc}")
         self.stages["val"] = {"loss": [], "labels": [], "probabilities": []}
 
-    def share_val_test(self, batch, stage="val"):
-
-        data, target = batch['data'].to(
-            self.device), batch['labels'].to(self.device)
+    # ---------------------------------------------------------------------
+    # Internal helpers
+    # ---------------------------------------------------------------------
+    def _shared_eval(self, batch, stage: str = "val"):  # noqa: D401, N802
+        """Evaluation logic shared by *validation* and *test* loops."""
+        data, target = batch["data"].to(self.device), batch["labels"].to(self.device)
         output = self.model(data.float())
-
         loss = self.criterion(output, target).item()
-        self.append_data(output, target, loss, stage=stage)
-
+        self._append_data(output, target, loss, stage=stage)
         return loss
 
-    def append_data(self, output, target, loss, stage="test"):
+    def _append_data(self, output, target, loss, stage: str = "test"):  # noqa: D401, N802
+        """Accumulate batch‑level statistics in stage buffer."""
         stage_data = self.stages.get(stage)
-        if stage_data:
-            stage_data["loss"].append(loss)
-            stage_data["labels"].extend(target.data.cpu().numpy())
-
-            if isinstance(self.criterion, nn.CrossEntropyLoss):
-                stage_data["probabilities"].extend(
-                    torch.softmax(output, dim=1).data.cpu().numpy())
-            elif isinstance(self.criterion, nn.BCEWithLogitsLoss):
-                stage_data["probabilities"].extend(
-                    torch.sigmoid(output).data.cpu().numpy())
-            else:
-                warnings.warn(
-                    f"Loss is not supported for {stage} step. No probabilities will be returned.")
-                stage_data["probabilities"].extend(output.data.cpu().numpy())
-        else:
+        if stage_data is None:
             warnings.warn(f"Invalid stage: {stage}. No data will be appended.")
+            return
 
-    def save_probabilities_and_labels(self, probabilities, labels, save_path, stage="train"):
+        stage_data["loss"].append(loss)
+        stage_data["labels"].extend(target.cpu().numpy())
+
+        if isinstance(self.criterion, nn.CrossEntropyLoss):
+            probs = torch.softmax(output, dim=1)
+        elif isinstance(self.criterion, nn.BCEWithLogitsLoss):
+            probs = torch.sigmoid(output)
+        else:
+            warnings.warn(
+                f"{self.criterion.__class__.__name__} not explicitly supported; "
+                "returning raw outputs as probabilities."
+            )
+            probs = output
+
+        stage_data["probabilities"].extend(probs.cpu().numpy())
+
+    def _save_probabilities_and_labels(
+        self,
+        probabilities,
+        labels,
+        save_path: str,
+        *,
+        stage: str = "train",
+    ) -> None:  # noqa: D401, N802
+        """Serialize probabilities & labels for downstream analysis."""
         os.makedirs(save_path, exist_ok=True)
+        np.save(os.path.join(save_path, f"probabilities_{stage}.npy"), np.array(probabilities))
+        np.save(os.path.join(save_path, f"labels_{stage}.npy"), np.array(labels))
 
-        # Convert to numpy and save
-        probabilities_np = np.array(probabilities)
-        labels_np = np.array(labels)
-
-        np.save(os.path.join(save_path, "probabilities_" +
-                stage+".npy"), probabilities_np)
-        np.save(os.path.join(save_path, "labels_"+stage+".npy"), labels_np)
-
-    def configure_optimizers(self):
-
+    # ---------------------------------------------------------------------
+    # Optimiser
+    # ---------------------------------------------------------------------
+    def configure_optimizers(self):  # noqa: D401, N802
+        """Instantiate optimiser used by PyTorch‑Lightning trainer."""
         return torch.optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)

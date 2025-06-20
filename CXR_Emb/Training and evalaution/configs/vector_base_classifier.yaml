@@ -1,0 +1,79 @@
+trainer:
+  default_root_dir: ./results/vector_train_all_test_all
+  accelerator: cuda
+  devices: 1
+  log_every_n_steps: 1
+  max_epochs: 100
+
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.RichProgressBar
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        monitor: "val_loss"
+        patience: 5
+        mode: "min"
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        monitor: "val_loss"
+        mode: "min"
+        save_top_k: 1
+        dirpath: ./results/vector_train_all_test_all/checkpoints
+        filename: "best_val_loss-{epoch:02d}-{val_loss:.4f}"
+
+data:
+  train_dataset:
+    class_path: torch.utils.data.ConcatDataset
+    init_args:
+      datasets:
+        - class_path: data.vec.dataset_class.VecDataset
+          init_args:
+            info_df_path: /path/to/train_mimic.csv
+            data_path: /path/to/mimic/files/
+        - class_path: data.vec.dataset_class.VecDataset
+          init_args:
+            info_df_path: /path/to/train_chexpert.csv
+            data_path: /path/to/chexpert/files/
+
+  val_dataset:
+    class_path: torch.utils.data.ConcatDataset
+    init_args:
+      datasets:
+        - class_path: data.vec.dataset_class.VecDataset
+          init_args:
+            info_df_path: /path/to/val_mimic.csv
+            data_path: /path/to/mimic/files/
+        - class_path: data.vec.dataset_class.VecDataset
+          init_args:
+            info_df_path: /path/to/val_chexpert.csv
+            data_path: /path/to/chexpert/files/
+
+  test_dataset:
+    class_path: torch.utils.data.ConcatDataset
+    init_args:
+      datasets:
+        - class_path: data.vec.dataset_class.VecDataset
+          init_args:
+            info_df_path: /path/to/test_mimic.csv
+            data_path: /path/to/mimic/files/
+        - class_path: data.vec.dataset_class.VecDataset
+          init_args:
+            info_df_path: /path/to/test_chexpert.csv
+            data_path: /path/to/chexpert/files/
+
+
+  batch_size: 256
+  num_workers: 35
+  prediction_on: "test"  # Options: "train", "val", "test"
+
+model:
+  model:
+    class_path: models.vec.models.CustomModel
+    init_args:
+      embeddings_size: 1376
+      hidden_layer_sizes: [768,256] # chanege this to match your model's architecture
+      dropout_rate: 0.0
+      num_classes: 14
+  criterion:
+    class_path: torch.nn.BCEWithLogitsLoss
+  prediction_on: "test"  # Options: "train", "val", "test"
+  save_probabilities_path: ./results/vector_train_all_test_all/probabilities

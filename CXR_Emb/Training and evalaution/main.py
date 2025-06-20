@@ -4,7 +4,7 @@ from models.module import CLS
 
 
 def cli_main():
-    cli = LightningCLI(CLS, DataModule, save_config_overwrite=True)
+    cli = LightningCLI(CLS, DataModule)
     # note: don't call fit!!
 
 
