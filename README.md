@@ -18,9 +18,8 @@ Access to both datasets requires user registration and the signing of a data use
 ## Reproducing the results:
 
 ### Model Configuration : CXR_Emb
-
 This part uses YAML configuration files located in the `./configs` directory to handle training, testing, and inference. Update the paths and parameters in these `.yaml` files to match your setup before execution. Model Configuration files for this `CXR_Emb` are located in the `./configs` configs directory under CXR_Emb/Training and evalaution  folder. 
----
+
 #### Training
 To train the model, use the following command. Replace ***.yaml with the name of your specific configuration file, and execute for different seeds. The seed numbers we used are [19,31,38,47,77]
 
@@ -31,7 +30,7 @@ To train the model, use the following command. Replace ***.yaml with the name of
 
 `***_config.yaml` should be replaced with actual config file name.
 
----
+
 
 #### Testing
 After training, the model can be tested  by specifying the path to the saved checkpoint and the configuration file used for training:
@@ -41,7 +40,7 @@ After training, the model can be tested  by specifying the path to the saved che
 ```
 Use the same YAML config used during training.
 
----
+
 
 #### 🔄 About `prediction_on`
 
@@ -61,7 +60,7 @@ You can override it on the CLI:
 python main.py predict -c ./configs/your_config.yaml --ckpt_path ./path_to_checkpoint.ckpt
 ```
 
----
+
 
 #### ⚙️ Notes
 
@@ -76,7 +75,7 @@ Run inference and optionally save probabilities + labels:
 ```bash
 python main.py predict -c ./configs/***r_config.yaml --ckpt_path ./path_to_checkpoint.ckpt
 ```
----
+
 #### Underdiagnosis analysis
 
 The underdiagnosis analysis for the `CXR_Emb` dataset is available in the `CXR_Emb/Fairness` directory. This directory includes five subfolders, each corresponding to a different dataset variant. For each scenario, we calculate the False Positive Rate (FPR) across multiple random seeds, compute the average FPR over five runs with 95% confidence intervals, and visualize the results using the `FPR_Visualizations_**.ipynb` notebook, where `**` should be replaced with the relevant dataset name (e.g., `MIMIC` for the MIMIC dataset).
