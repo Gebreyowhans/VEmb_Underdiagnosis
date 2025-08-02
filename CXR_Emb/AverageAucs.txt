@@ -1,0 +1,16 @@
+Label, AUC, CI
+Enlarged Cardiomediastinum, 0.734, nan
+Cardiomegaly, 0.801, nan
+Lung Opacity, 0.767, nan
+Lung Lesion, 0.807, nan
+Edema, 0.89, nan
+Consolidation, 0.826, nan
+Pneumonia, 0.745, nan
+Atelectasis, 0.807, nan
+Pneumothorax, 0.887, nan
+Pleural Effusion, 0.905, nan
+Pleural Other, 0.871, nan
+Fracture, 0.803, nan
+Support Devices, 0.926, nan
+No Finding, 0.866, nan
+AVG,  0.831, nan

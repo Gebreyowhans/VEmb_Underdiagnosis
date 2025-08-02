@@ -50,3 +50,4 @@ class VecDataset(Dataset):
         label = torch.tensor(label, dtype=torch.float32)
 
         return {'data': item, 'labels': label}
+    

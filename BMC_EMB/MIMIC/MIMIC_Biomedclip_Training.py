@@ -40,7 +40,7 @@ signficance_level = 1.96
 def get_optimal_hyperparameters():
     # Optimal hyperparameters
     hyperparameters = {
-        "embeddings_size": 512,
+        "embeddings_size": 1376,
         "learning_rate": 0.0001,
         "batch_size": 48,
         "epochs": 50,
