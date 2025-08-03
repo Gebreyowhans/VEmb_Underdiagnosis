@@ -23,7 +23,7 @@
 
 **/biomedclip-embedding/
 
-**/Baseline_FPR/
+#**/Baseline_FPR/
 **/CXR_Foundation/
 **/CXR_FPR/
 
